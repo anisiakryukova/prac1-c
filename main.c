@@ -1,72 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-int check_arguments(int argc, char *argv[])
+#include "calc.h"
+ 
+int main(int argc, char **argv)
 {
-	if (argc < 6) {
-		return 1;
-	}
-	if (strcmp(argv[argc - 2], "-k") != 0) {
-		return 1;
-	}
-	if ((argc - 3) % 3 != 0) {
-		return 1;
-	}
-	if ((atoi(argv[argc - 1]) > 0) && (atoi(argv[argc - 1]) < 1024) == 0) {
-		return 1;
-	}
-	return 0;
-}
-int calculate(const int left_arg, const char operation, const int right_arg)
-{
-	switch (operation) {
-		case '+':
-			return left_arg + right_arg;
-		case '-':
-			return left_arg - right_arg;
-		case '*':
-			return left_arg * right_arg;
-		case '%':
-			return left_arg % right_arg;
-		default:
-			return -1;
-		}
-}
-void decrypted(int *answers, const int count_examples, const int key, char *text)
-{
-	for (int i = 0; i < count_examples; i++) {
-		text[i] = (char)(answers[i] - key); 
-	}
-	text[count_examples] = '\0';
-}
-int main(int argc, char *argv[])
-{
-	if (check_arguments(argc, argv) == 1){
-		return 1;
-	}
-	const int count_examples = (argc - 3) / 3;
-	const int key = atoi(argv[argc - 1]);
-	int *answers = malloc(count_examples *sizeof(int));
-	char *text = malloc(count_examples + 1);
-	for (int i = 0; i < count_examples; i++){
-		int left = atoi(argv[1 + i*3]);
-		char operation = argv[2 + i*3][0];
-		int right = atoi(argv[3 + i*3]);
-		answers[i] = calculate(left, operation, right);
-		if (answers[i] == -1)
-		{
-			free(answers);
-			free(text);
-			return 1;
-		}
-		printf("Answer: %d: %d\n", i+1, answers[i]);
-	}
-	decrypted(answers, count_examples, key, text);
-	printf("Result: %s\n", text);
-	free(answers);
-	free(text);
-	fflush(stdout);
-	return 0;
+    if (checkCmdArgs(argc, argv) == 1)
+    {
+        return 1;
+    }
+ 
+    int status = 1;
+    int expr_count = (argc - 3) / 3;
+    int *answers = calloc((size_t)expr_count, sizeof(int));
+    char *out_str = calloc((size_t)expr_count + 1, sizeof(char));
+    int key = 0;
+ 
+    if (answers == NULL || out_str == NULL)
+    {
+        fprintf(stderr, "ошибка выделения памяти\n");
+        goto cleanup;
+    }
+    if (strToIntStrict(argv[argc - 1], &key) == 1)
+    {
+        goto cleanup;
+    }
+    if (evalExpressions(argc, argv, answers) == 1)
+    {
+        goto cleanup;
+    }
+    if (showOutput(argc, answers, out_str, key) == 1)
+    {
+        goto cleanup;
+    }
+ 
+    status = 0;
+ 
+cleanup:
+    free(answers);
+    free(out_str);
+    return status;
 }
 
